@@ -263,7 +263,7 @@ async def call_openai_chat(system_prompt: str, user_prompt: str, temperature: fl
     try:
         response = await asyncio.to_thread(
             openai.ChatCompletion.create,
-            model="gpt-5.1-preview",
+            model="gpt-4o",
             messages=[
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_prompt},
