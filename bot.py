@@ -208,6 +208,18 @@ PROMPT_SYMBIO = """
 """
 
 
+async def send_long_message(message: Message, text: str, reply_markup=None):
+    if not text:
+        return
+    limit = 4000
+    parts = [text[i:i + limit] for i in range(0, len(text), limit)]
+    for i, part in enumerate(parts):
+        if i == len(parts) - 1:
+            await message.answer(part, reply_markup=reply_markup)
+        else:
+            await message.answer(part)
+
+
 def set_state(user_id: int, state: str) -> None:
     user_states[user_id] = state
 
@@ -288,7 +300,7 @@ async def cmd_help(message: Message):
         "🧭 Подбор профессий — подберу направления по анкете.\n"
         "📄 Составить резюме — сделаю резюме под вакансию.\n"
         "🧾 Проверка резюме — разберу твой файл/текст как HR.\n"
-        "🎤 HR-собеседование — потренируем ответы.\n"
+        "🎤 HR-собеседование — тренировочное интервью с разбором.\n"
         "🎯 План собеседования — дам стратегию поведения.\n"
         "🌀 Симбиоз услуг — сделаю всё вместе в одном отчёте.",
         reply_markup=main_keyboard(),
@@ -401,7 +413,7 @@ async def handle_document(message: Message):
     user_prompt = f"Должность: {role}\n\nТекст резюме:\n{text}"
     review = await call_openai_chat(PROMPT_RESCHECK, user_prompt, temperature=0.5)
     set_state(uid, States.NONE)
-    await message.answer(review, reply_markup=main_keyboard())
+    await send_long_message(message, review, reply_markup=main_keyboard())
 
 
 @dp.message(F.text)
@@ -447,7 +459,7 @@ async def handle_text(message: Message):
             f"Цели и интересы: {data.get('goal')}\n"
         )
         reply = await call_openai_chat(PROMPT_CAREER, user_prompt, temperature=0.5)
-        await message.answer(reply, reply_markup=main_keyboard())
+        await send_long_message(message, reply, reply_markup=main_keyboard())
         return
 
     if state == States.RESUME_ASK_ROLE:
@@ -507,7 +519,7 @@ async def handle_text(message: Message):
             f"Дополнительно: {data.get('resume_extra')}\n"
         )
         resume_text = await call_openai_chat(PROMPT_RESUME, user_prompt, temperature=0.4)
-        await message.answer(resume_text, reply_markup=main_keyboard())
+        await send_long_message(message, resume_text, reply_markup=main_keyboard())
         return
 
     if state == States.RESCHECK_ASK_ROLE:
@@ -526,7 +538,7 @@ async def handle_text(message: Message):
         user_prompt = f"Должность: {role}\n\nТекст резюме:\n{text}"
         review = await call_openai_chat(PROMPT_RESCHECK, user_prompt, temperature=0.5)
         set_state(uid, States.NONE)
-        await message.answer(review, reply_markup=main_keyboard())
+        await send_long_message(message, review, reply_markup=main_keyboard())
         return
 
     if state == States.HRMOCK_ASK_ROLE:
@@ -561,7 +573,7 @@ async def handle_text(message: Message):
                 joined_answers += f"Вопрос {i}: {q}\nОтвет: {ans}\n\n"
             user_prompt = f"Должность кандидата: {role}\n\nОтветы кандидата:\n{joined_answers}"
             review = await call_openai_chat(PROMPT_MOCK, user_prompt, temperature=0.6)
-            await message.answer(review, reply_markup=main_keyboard())
+            await send_long_message(message, review, reply_markup=main_keyboard())
         return
 
     if state == States.PLAN_ASK_ROLE:
@@ -600,7 +612,7 @@ async def handle_text(message: Message):
             f"Дополнительно: {data.get('plan_extra')}\n"
         )
         plan = await call_openai_chat(PROMPT_PLAN, user_prompt, temperature=0.5)
-        await message.answer(plan, reply_markup=main_keyboard())
+        await send_long_message(message, plan, reply_markup=main_keyboard())
         return
 
     if state == States.SYMBIO_ASK_NAME:
@@ -653,7 +665,7 @@ async def handle_text(message: Message):
             f"Дополнительно: {data.get('sym_extra')}\n"
         )
         report = await call_openai_chat(PROMPT_SYMBIO, user_prompt, temperature=0.5)
-        await message.answer(report, reply_markup=main_keyboard())
+        await send_long_message(message, report, reply_markup=main_keyboard())
         return
 
     await message.answer(
