@@ -2,6 +2,7 @@ import os
 import asyncio
 import logging
 from typing import Dict, Any, List
+from datetime import date
 
 from dotenv import load_dotenv
 from aiogram import Bot, Dispatcher, F
@@ -36,6 +37,9 @@ dp = Dispatcher()
 
 user_states: Dict[int, str] = {}
 user_data: Dict[int, Dict[str, Any]] = {}
+user_limits: Dict[int, Dict[str, Any]] = {}
+
+DAILY_LIMIT_REQUESTS = 50
 
 
 class States:
@@ -43,7 +47,7 @@ class States:
 
     CAREER_ASK_AGE = "CAREER_ASK_AGE"
     CAREER_ASK_EDU = "CAREER_ASK_EDU"
-    CAREER_ASK_SKILLS = "CAREER_ASK_SKILLS"
+    CAREER_ASK_SKILLS = "CARE_ASK_SKILLS"
     CAREER_ASK_EXP = "CAREER_ASK_EXP"
     CAREER_ASK_GOAL = "CAREER_ASK_GOAL"
 
@@ -234,11 +238,32 @@ def get_user_data(user_id: int) -> Dict[str, Any]:
     return user_data[user_id]
 
 
+def check_limit(user_id: int) -> bool:
+    today = date.today().isoformat()
+    info = user_limits.get(user_id)
+    if not info or info.get("date") != today:
+        user_limits[user_id] = {"date": today, "count": 0}
+        return True
+    if info["count"] >= DAILY_LIMIT_REQUESTS:
+        return False
+    return True
+
+
+def inc_limit(user_id: int) -> None:
+    today = date.today().isoformat()
+    info = user_limits.get(user_id)
+    if not info or info.get("date") != today:
+        user_limits[user_id] = {"date": today, "count": 1}
+    else:
+        info["count"] += 1
+        user_limits[user_id] = info
+
+
 async def call_openai_chat(system_prompt: str, user_prompt: str, temperature: float = 0.5) -> str:
     try:
         response = await asyncio.to_thread(
             openai.ChatCompletion.create,
-            model="gpt-4o-mini",
+            model="gpt-5.1-preview",
             messages=[
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_prompt},
@@ -337,6 +362,9 @@ async def terms(message: Message):
 @dp.message(F.text == "🧭 Подбор профессий")
 async def btn_career(message: Message):
     uid = message.from_user.id
+    if not check_limit(uid):
+        await message.answer("На сегодня достигнут лимит запросов. Попробуй завтра.", reply_markup=main_keyboard())
+        return
     data = get_user_data(uid)
     data.clear()
     set_state(uid, States.CAREER_ASK_AGE)
@@ -346,6 +374,9 @@ async def btn_career(message: Message):
 @dp.message(F.text == "📄 Составить резюме")
 async def btn_resume(message: Message):
     uid = message.from_user.id
+    if not check_limit(uid):
+        await message.answer("На сегодня достигнут лимит запросов. Попробуй завтра.", reply_markup=main_keyboard())
+        return
     data = get_user_data(uid)
     data.clear()
     set_state(uid, States.RESUME_ASK_ROLE)
@@ -355,6 +386,9 @@ async def btn_resume(message: Message):
 @dp.message(F.text == "🧾 Проверка резюме")
 async def btn_rescheck(message: Message):
     uid = message.from_user.id
+    if not check_limit(uid):
+        await message.answer("На сегодня достигнут лимит запросов. Попробуй завтра.", reply_markup=main_keyboard())
+        return
     data = get_user_data(uid)
     data.clear()
     set_state(uid, States.RESCHECK_ASK_ROLE)
@@ -364,6 +398,9 @@ async def btn_rescheck(message: Message):
 @dp.message(F.text == "🎤 HR-собеседование")
 async def btn_mock(message: Message):
     uid = message.from_user.id
+    if not check_limit(uid):
+        await message.answer("На сегодня достигнут лимит запросов. Попробуй завтра.", reply_markup=main_keyboard())
+        return
     data = get_user_data(uid)
     data.clear()
     set_state(uid, States.HRMOCK_ASK_ROLE)
@@ -373,6 +410,9 @@ async def btn_mock(message: Message):
 @dp.message(F.text == "🎯 План собеседования")
 async def btn_plan(message: Message):
     uid = message.from_user.id
+    if not check_limit(uid):
+        await message.answer("На сегодня достигнут лимит запросов. Попробуй завтра.", reply_markup=main_keyboard())
+        return
     data = get_user_data(uid)
     data.clear()
     set_state(uid, States.PLAN_ASK_ROLE)
@@ -382,6 +422,9 @@ async def btn_plan(message: Message):
 @dp.message(F.text == "🌀 Симбиоз услуг")
 async def btn_symbio(message: Message):
     uid = message.from_user.id
+    if not check_limit(uid):
+        await message.answer("На сегодня достигнут лимит запросов. Попробуй завтра.", reply_markup=main_keyboard())
+        return
     data = get_user_data(uid)
     data.clear()
     set_state(uid, States.SYMBIO_ASK_NAME)
@@ -394,6 +437,10 @@ async def handle_document(message: Message):
     state = get_state(uid)
     if state != States.RESCHECK_WAIT_TEXT:
         await message.answer("Сейчас я не ожидаю файл. Если хочешь проверить резюме, выбери «🧾 Проверка резюме».")
+        return
+
+    if not check_limit(uid):
+        await message.answer("На сегодня достигнут лимит запросов. Попробуй завтра.", reply_markup=main_keyboard())
         return
 
     doc: Document = message.document
@@ -413,6 +460,7 @@ async def handle_document(message: Message):
     user_prompt = f"Должность: {role}\n\nТекст резюме:\n{text}"
     review = await call_openai_chat(PROMPT_RESCHECK, user_prompt, temperature=0.5)
     set_state(uid, States.NONE)
+    inc_limit(uid)
     await send_long_message(message, review, reply_markup=main_keyboard())
 
 
@@ -450,6 +498,9 @@ async def handle_text(message: Message):
     if state == States.CAREER_ASK_GOAL:
         data["goal"] = text
         set_state(uid, States.NONE)
+        if not check_limit(uid):
+            await message.answer("На сегодня достигнут лимит запросов. Попробуй завтра.", reply_markup=main_keyboard())
+            return
         await message.answer("Думаю над твоим профилем…")
         user_prompt = (
             f"Возраст: {data.get('age')}\n"
@@ -459,6 +510,7 @@ async def handle_text(message: Message):
             f"Цели и интересы: {data.get('goal')}\n"
         )
         reply = await call_openai_chat(PROMPT_CAREER, user_prompt, temperature=0.5)
+        inc_limit(uid)
         await send_long_message(message, reply, reply_markup=main_keyboard())
         return
 
@@ -507,6 +559,9 @@ async def handle_text(message: Message):
     if state == States.RESUME_ASK_EXTRA:
         data["resume_extra"] = text
         set_state(uid, States.NONE)
+        if not check_limit(uid):
+            await message.answer("На сегодня достигнут лимит запросов. Попробуй завтра.", reply_markup=main_keyboard())
+            return
         await message.answer("Составляю резюме…")
         user_prompt = (
             f"Целевая должность: {data.get('resume_role')}\n\n"
@@ -519,6 +574,7 @@ async def handle_text(message: Message):
             f"Дополнительно: {data.get('resume_extra')}\n"
         )
         resume_text = await call_openai_chat(PROMPT_RESUME, user_prompt, temperature=0.4)
+        inc_limit(uid)
         await send_long_message(message, resume_text, reply_markup=main_keyboard())
         return
 
@@ -533,11 +589,15 @@ async def handle_text(message: Message):
         return
 
     if state == States.RESCHECK_WAIT_TEXT:
+        if not check_limit(uid):
+            await message.answer("На сегодня достигнут лимит запросов. Попробуй завтра.", reply_markup=main_keyboard())
+            return
         role = data.get("rescheck_role", "желаемая должность")
         await message.answer("Анализирую резюме как HR…")
         user_prompt = f"Должность: {role}\n\nТекст резюме:\n{text}"
         review = await call_openai_chat(PROMPT_RESCHECK, user_prompt, temperature=0.5)
         set_state(uid, States.NONE)
+        inc_limit(uid)
         await send_long_message(message, review, reply_markup=main_keyboard())
         return
 
@@ -566,6 +626,9 @@ async def handle_text(message: Message):
             await message.answer(f"Вопрос {idx + 1}: {HR_QUESTIONS[idx]}")
         else:
             set_state(uid, States.NONE)
+            if not check_limit(uid):
+                await message.answer("На сегодня достигнут лимит запросов. Попробуй завтра.", reply_markup=main_keyboard())
+                return
             role = data.get("mock_role", "желаемая должность")
             await message.answer("Спасибо, анализирую твои ответы…")
             joined_answers = ""
@@ -573,6 +636,7 @@ async def handle_text(message: Message):
                 joined_answers += f"Вопрос {i}: {q}\nОтвет: {ans}\n\n"
             user_prompt = f"Должность кандидата: {role}\n\nОтветы кандидата:\n{joined_answers}"
             review = await call_openai_chat(PROMPT_MOCK, user_prompt, temperature=0.6)
+            inc_limit(uid)
             await send_long_message(message, review, reply_markup=main_keyboard())
         return
 
@@ -603,6 +667,9 @@ async def handle_text(message: Message):
     if state == States.PLAN_ASK_EXTRA:
         data["plan_extra"] = text
         set_state(uid, States.NONE)
+        if not check_limit(uid):
+            await message.answer("На сегодня достигнут лимит запросов. Попробуй завтра.", reply_markup=main_keyboard())
+            return
         await message.answer("Готовлю план поведения и ответы на собеседовании…")
         user_prompt = (
             f"Целевая должность: {data.get('plan_role')}\n"
@@ -612,6 +679,7 @@ async def handle_text(message: Message):
             f"Дополнительно: {data.get('plan_extra')}\n"
         )
         plan = await call_openai_chat(PROMPT_PLAN, user_prompt, temperature=0.5)
+        inc_limit(uid)
         await send_long_message(message, plan, reply_markup=main_keyboard())
         return
 
@@ -654,6 +722,9 @@ async def handle_text(message: Message):
     if state == States.SYMBIO_ASK_EXTRA:
         data["sym_extra"] = text
         set_state(uid, States.NONE)
+        if not check_limit(uid):
+            await message.answer("На сегодня достигнут лимит запросов. Попробуй завтра.", reply_markup=main_keyboard())
+            return
         await message.answer("Готовлю для тебя комплексный карьерный отчёт…")
         user_prompt = (
             f"Имя: {data.get('sym_name')}\n"
@@ -665,6 +736,7 @@ async def handle_text(message: Message):
             f"Дополнительно: {data.get('sym_extra')}\n"
         )
         report = await call_openai_chat(PROMPT_SYMBIO, user_prompt, temperature=0.5)
+        inc_limit(uid)
         await send_long_message(message, report, reply_markup=main_keyboard())
         return
 
