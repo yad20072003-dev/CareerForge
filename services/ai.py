@@ -1,8 +1,7 @@
 import os
-from openai import AsyncOpenAI
-from openai.types.chat import ChatCompletionMessageParam
+from openai import OpenAI
 
-client = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 MODEL = "gpt-5.1-mini"
 MAX_CHARS = 12000
@@ -24,19 +23,17 @@ async def ai_answer(system_prompt: str, user_prompt: str) -> str:
     system_prompt = safe_truncate(system_prompt)
     user_prompt = safe_truncate(user_prompt)
 
-    messages: list[ChatCompletionMessageParam] = [
-        {"role": "system", "content": system_prompt},
-        {"role": "user", "content": user_prompt},
-    ]
-
     try:
-        completion = await client.chat.completions.create(
+        completion = client.chat.completions.create(
             model=MODEL,
-            messages=messages,
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt},
+            ],
             temperature=0.45,
             max_tokens=2048,
         )
-        return clean_text(completion.choices[0].message.content)
 
+        return clean_text(completion.choices[0].message["content"])
     except Exception:
-        return "⚠ Ошибка обращения к ИИ. Попробуйте позже."
+        return "⚠ Ошибка. Попробуйте позже."
