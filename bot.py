@@ -32,9 +32,19 @@ from services.courses_service import course_recommendations
 from products.products import PRODUCTS
 
 BOT_TOKEN = os.getenv("BOT_TOKEN")
+MAX_MOCK_STEPS = 7
 
 bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher()
+
+
+def is_answer_too_short(text: str) -> bool:
+    if not text:
+        return True
+    t = text.strip()
+    if len(t) < 10:
+        return True
+    return False
 
 
 @dp.message(CommandStart())
@@ -73,13 +83,13 @@ async def info_block(cb: CallbackQuery):
         "🔍 Проверка резюме — 149₽\n"
         "Разбор вашего резюме глазами HR: что хорошо, что плохо, где риски, плюс улучшенная версия.\n\n"
         "🎤 HR-мок интервью — 199₽\n"
-        "Вы присылаете вопросы и свои ответы, бот разбирает и показывает, как отвечать сильнее.\n\n"
+        "Тренировочное собеседование: вопросы как у реального HR, разбор каждого ответа и финальная оценка.\n\n"
         "📘 План на собеседование — 149₽\n"
-        "Как себя вести, что подчеркивать, чего избегать, какие вопросы вам точно зададут.\n\n"
+        "Как себя вести, что подчеркивать, чего избегать и к каким вопросам готовиться.\n\n"
         "💬 Soft skills анализ — 129₽\n"
         "Разбор поведения, сильных и слабых сторон, рекомендации по развитию.\n\n"
         "📄 Анализ вакансии — 129₽\n"
-        "Смотрим вакансию и ваш профиль, считаем match, показываем, чего не хватает.\n\n"
+        "Смотрим вакансию и ваш профиль, оцениваем соответствие и показываем, чего не хватает.\n\n"
         "🎓 Подбор обучения — 129₽\n"
         "Что именно вам лучше учить сейчас и какие мини-проекты делать для прокачки."
     )
@@ -114,12 +124,98 @@ async def pay_stub(cb: CallbackQuery):
     )
 
 
+@dp.callback_query(F.data == "back_step")
+async def back_step(cb: CallbackQuery, state: FSMContext):
+    current = await state.get_state()
+    if current is None:
+        await cb.message.edit_text("Главное меню:", reply_markup=main_keyboard())
+        return
+
+    if current == CareerState.waiting_for_education.state:
+        await state.set_state(CareerState.waiting_for_basic)
+        await cb.message.edit_text(
+            "Сколько вам лет и чем вы сейчас занимаетесь (учёба, работа, перерыв)?",
+            reply_markup=process_keyboard()
+        )
+    elif current == CareerState.waiting_for_experience.state:
+        await state.set_state(CareerState.waiting_for_education)
+        await cb.message.edit_text(
+            "Расскажите про образование: вуз/колледж/курсы, направления, годы.",
+            reply_markup=process_keyboard()
+        )
+    elif current == CareerState.waiting_for_interests.state:
+        await state.set_state(CareerState.waiting_for_experience)
+        await cb.message.edit_text(
+            "Опишите ваш опыт: работа, стажировки, подработки, проекты. Что делали и что больше всего понравилось.",
+            reply_markup=process_keyboard()
+        )
+    elif current == CareerState.waiting_for_preferences.state:
+        await state.set_state(CareerState.waiting_for_interests)
+        await cb.message.edit_text(
+            "Что вам реально интересно по жизни и учёбе? Какие темы, задачи или активности вас цепляют.",
+            reply_markup=process_keyboard()
+        )
+    elif current == CareerState.waiting_for_goals.state:
+        await state.set_state(CareerState.waiting_for_preferences)
+        await cb.message.edit_text(
+            "Какая работа вам ближе: с людьми, с цифрами, с текстами, с техникой, с креативом? Нравится стабильность или постоянные изменения?",
+            reply_markup=process_keyboard()
+        )
+    elif current == ResumeCreateState.waiting_for_contacts.state:
+        await state.set_state(ResumeCreateState.waiting_for_position)
+        await cb.message.edit_text(
+            "Под какую должность или направление делаем резюме? Можно указать пример вакансии.",
+            reply_markup=process_keyboard()
+        )
+    elif current == ResumeCreateState.waiting_for_experience.state:
+        await state.set_state(ResumeCreateState.waiting_for_contacts)
+        await cb.message.edit_text(
+            "Укажите город и контакты: телефон, email, Telegram (то, что готовы указать в резюме).",
+            reply_markup=process_keyboard()
+        )
+    elif current == ResumeCreateState.waiting_for_education.state:
+        await state.set_state(ResumeCreateState.waiting_for_experience)
+        await cb.message.edit_text(
+            "Опишите опыт: все места работы/стажировок. Для каждого: период, компания, должность, задачи и результаты.",
+            reply_markup=process_keyboard()
+        )
+    elif current == ResumeCreateState.waiting_for_skills.state:
+        await state.set_state(ResumeCreateState.waiting_for_education)
+        await cb.message.edit_text(
+            "Расскажите про образование: вуз/колледж, направление, годы. Плюс важные курсы, если есть.",
+            reply_markup=process_keyboard()
+        )
+    elif current == ResumeCreateState.waiting_for_projects.state:
+        await state.set_state(ResumeCreateState.waiting_for_skills)
+        await cb.message.edit_text(
+            "Перечислите ваши ключевые навыки: отдельными блоками hard (профнавыки) и soft (личные).",
+            reply_markup=process_keyboard()
+        )
+    elif current == ResumeCreateState.waiting_for_extra.state:
+        await state.set_state(ResumeCreateState.waiting_for_projects)
+        await cb.message.edit_text(
+            "Опишите проекты и достижения, которыми вы гордитесь: учебные, рабочие, личные.",
+            reply_markup=process_keyboard()
+        )
+    elif current in (
+        MockInterviewState.waiting_for_position.state,
+        MockInterviewState.waiting_for_experience.state,
+        MockInterviewState.waiting_for_goals.state,
+        MockInterviewState.in_interview.state,
+    ):
+        await state.clear()
+        await cb.message.edit_text("HR-мок интервью прервано. Выберите услугу заново.", reply_markup=services_keyboard())
+    else:
+        await state.clear()
+        await cb.message.edit_text("Главное меню:", reply_markup=main_keyboard())
+
+
 @dp.callback_query(F.data == "career")
 async def start_career(cb: CallbackQuery):
     text = (
         "🧭 Профориентация — 149₽\n\n"
-        "Для тех, кто не до конца понимает, куда двигаться по карьере.\n"
-        "Итог: разбор сильных сторон, рисков и список подходящих направлений.\n\n"
+        "Подходит, если вы не до конца понимаете, куда двигаться по карьере.\n"
+        "Итог: разбор сильных сторон, рисков и список направлений, где вы можете раскрыться.\n\n"
         "Можно оплатить позже и уже сейчас пройти разбор."
     )
     await cb.message.edit_text(
@@ -133,63 +229,81 @@ async def start_career_input(cb: CallbackQuery, state: FSMContext):
     await state.clear()
     await state.set_state(CareerState.waiting_for_basic)
     await cb.message.edit_text(
-        "Начнём. Скажите, сколько вам лет и чем вы сейчас занимаетесь (учёба, работа, перерыв).",
+        "Сколько вам лет и чем вы сейчас занимаетесь (учёба, работа, перерыв)?",
         reply_markup=process_keyboard()
     )
 
 
 @dp.message(CareerState.waiting_for_basic)
 async def career_basic(message: Message, state: FSMContext):
+    if is_answer_too_short(message.text):
+        await message.answer("Нужно чуть подробнее, чтобы я мог понять вашу ситуацию.", reply_markup=process_keyboard())
+        return
     await state.update_data(basic=message.text)
     await state.set_state(CareerState.waiting_for_education)
     await message.answer(
-        "Расскажите про образование: где учитесь или учились, направление, курс или этап.",
+        "Расскажите про образование: вуз/колледж/курсы, направление, годы. Что вам там нравилось, а что нет.",
         reply_markup=process_keyboard()
     )
 
 
 @dp.message(CareerState.waiting_for_education)
 async def career_education(message: Message, state: FSMContext):
+    if is_answer_too_short(message.text):
+        await message.answer("Добавьте немного деталей: место, направление, годы, что запомнилось.", reply_markup=process_keyboard())
+        return
     await state.update_data(education=message.text)
     await state.set_state(CareerState.waiting_for_experience)
     await message.answer(
-        "Опишите ваш опыт: работа, стажировки, подработки, проекты. Что делали и что больше всего понравилось.",
+        "Опишите ваш опыт: работа, стажировки, подработки, проекты. Для каждого: чем занимались и что получилось лучше всего.",
         reply_markup=process_keyboard()
     )
 
 
 @dp.message(CareerState.waiting_for_experience)
 async def career_experience(message: Message, state: FSMContext):
+    if is_answer_too_short(message.text):
+        await message.answer("Опишите опыт чуть подробнее: где, кем, какие задачи и результаты.", reply_markup=process_keyboard())
+        return
     await state.update_data(experience=message.text)
     await state.set_state(CareerState.waiting_for_interests)
     await message.answer(
-        "Что вам реально интересно по жизни и учёбе? Какие темы, задачи или активности вас цепляют.",
+        "Что вам реально интересно по жизни и учёбе? Темы, задачи или активности, от которых вы ловите кайф.",
         reply_markup=process_keyboard()
     )
 
 
 @dp.message(CareerState.waiting_for_interests)
 async def career_interests(message: Message, state: FSMContext):
+    if is_answer_too_short(message.text):
+        await message.answer("Напишите честно, что вас цепляет, даже если это кажется несерьёзным.", reply_markup=process_keyboard())
+        return
     await state.update_data(interests=message.text)
     await state.set_state(CareerState.waiting_for_preferences)
     await message.answer(
-        "Какая работа вам ближе: с людьми, с цифрами, с текстами, с техникой, с креативом? Нравится стабильность или движ и изменения?",
+        "Какая работа вам ближе: с людьми, с цифрами, с текстами, с техникой, с креативом? Нравится стабильность или постоянные изменения?",
         reply_markup=process_keyboard()
     )
 
 
 @dp.message(CareerState.waiting_for_preferences)
 async def career_preferences(message: Message, state: FSMContext):
+    if is_answer_too_short(message.text):
+        await message.answer("Чуть конкретнее: с чем вы точно не хотите работать и что вам кажется комфортным.", reply_markup=process_keyboard())
+        return
     await state.update_data(preferences=message.text)
     await state.set_state(CareerState.waiting_for_goals)
     await message.answer(
-        "Какие у вас цели на ближайшие 1–3 года по карьере или учёбе? Чего хотите добиться?",
+        "Какие у вас цели на ближайшие 1–3 года по карьере или учёбе? Чего хотите добиться, без цензуры.",
         reply_markup=process_keyboard()
     )
 
 
 @dp.message(CareerState.waiting_for_goals)
 async def career_goals(message: Message, state: FSMContext):
+    if is_answer_too_short(message.text):
+        await message.answer("Опишите цели подробнее: должности, уровень дохода, стиль жизни.", reply_markup=process_keyboard())
+        return
     await state.update_data(goals=message.text)
     data = await state.get_data()
     user_text = (
@@ -210,7 +324,7 @@ async def start_resume(cb: CallbackQuery):
     text = (
         "📝 Создание резюме — 199₽\n\n"
         "Подходит, если нужно нормальное резюме под конкретную должность.\n"
-        "Бот задаст ряд вопросов и соберёт из ваших ответов готовый текст резюме.\n\n"
+        "Бот задаст серию вопросов и соберёт из ваших ответов готовый текст резюме.\n\n"
         "Можно оплатить позже и пройти услугу сейчас."
     )
     await cb.message.edit_text(
@@ -224,73 +338,94 @@ async def begin_resume(cb: CallbackQuery, state: FSMContext):
     await state.clear()
     await state.set_state(ResumeCreateState.waiting_for_position)
     await cb.message.edit_text(
-        "Для начала: под какую должность или направление делаем резюме?",
+        "Под какую должность или направление делаем резюме? Можно указать пример вакансии.",
         reply_markup=process_keyboard()
     )
 
 
 @dp.message(ResumeCreateState.waiting_for_position)
 async def resume_position(message: Message, state: FSMContext):
+    if is_answer_too_short(message.text):
+        await message.answer("Уточните должность или направление чуть подробнее, чтобы резюме попало в цель.", reply_markup=process_keyboard())
+        return
     await state.update_data(position=message.text)
     await state.set_state(ResumeCreateState.waiting_for_contacts)
     await message.answer(
-        "Теперь укажите город и контакты: телефон, email, Telegram (что готовы указать в резюме).",
+        "Укажите город и контакты: телефон, email, Telegram. То, что готовы показывать работодателю.",
         reply_markup=process_keyboard()
     )
 
 
 @dp.message(ResumeCreateState.waiting_for_contacts)
 async def resume_contacts(message: Message, state: FSMContext):
+    if is_answer_too_short(message.text):
+        await message.answer("Нужно указать хотя бы город и один способ связи.", reply_markup=process_keyboard())
+        return
     await state.update_data(contacts=message.text)
     await state.set_state(ResumeCreateState.waiting_for_experience)
     await message.answer(
-        "Опишите опыт: работа, стажировки, подработки. Для каждого места: где, когда, кем и что делали.",
+        "Опишите опыт: все места работы/стажировок. Для каждого: период, компания, должность, ключевые задачи и результаты.",
         reply_markup=process_keyboard()
     )
 
 
 @dp.message(ResumeCreateState.waiting_for_experience)
 async def resume_experience(message: Message, state: FSMContext):
+    if is_answer_too_short(message.text):
+        await message.answer("Добавьте детали по опыту: где, кем, какие задачи и конкретные результаты.", reply_markup=process_keyboard())
+        return
     await state.update_data(experience=message.text)
     await state.set_state(ResumeCreateState.waiting_for_education)
     await message.answer(
-        "Расскажите про образование: вуз/колледж/курсы, направления, годы.",
+        "Расскажите про образование: основное и доп. образование. ВУЗ/колледж, направление, годы, важные курсы.",
         reply_markup=process_keyboard()
     )
 
 
 @dp.message(ResumeCreateState.waiting_for_education)
 async def resume_education(message: Message, state: FSMContext):
+    if is_answer_too_short(message.text):
+        await message.answer("Чуть подробнее: список мест обучения, направления и годы.", reply_markup=process_keyboard())
+        return
     await state.update_data(education=message.text)
     await state.set_state(ResumeCreateState.waiting_for_skills)
     await message.answer(
-        "Теперь перечислите ваши ключевые навыки: и технические (hard), и личные (soft).",
+        "Перечислите ваши ключевые навыки. Сначала hard (инструменты, технологии, профумения), потом soft (коммуникация, ответственность и т.п.).",
         reply_markup=process_keyboard()
     )
 
 
 @dp.message(ResumeCreateState.waiting_for_skills)
 async def resume_skills(message: Message, state: FSMContext):
+    if is_answer_too_short(message.text):
+        await message.answer("Нужно перечислить хотя бы несколько hard и soft навыков.", reply_markup=process_keyboard())
+        return
     await state.update_data(skills=message.text)
     await state.set_state(ResumeCreateState.waiting_for_projects)
     await message.answer(
-        "Есть ли проекты или достижения, которыми вы гордитесь? Учебные, личные, рабочие — опишите.",
+        "Опишите проекты и достижения, которыми вы гордитесь: рабочие, учебные, личные. Что именно сделали и какой был результат.",
         reply_markup=process_keyboard()
     )
 
 
 @dp.message(ResumeCreateState.waiting_for_projects)
 async def resume_projects(message: Message, state: FSMContext):
+    if is_answer_too_short(message.text):
+        await message.answer("Добавьте хотя бы пару примеров проектов или достижений.", reply_markup=process_keyboard())
+        return
     await state.update_data(projects=message.text)
     await state.set_state(ResumeCreateState.waiting_for_extra)
     await message.answer(
-        "Добавьте дополнительную информацию: языки, важные курсы, формат работы, что хотите подчеркнуть.",
+        "Дополнительно: языки, формат работы, желаемые задачи, что хотите подчеркнуть или скрыть в резюме.",
         reply_markup=process_keyboard()
     )
 
 
 @dp.message(ResumeCreateState.waiting_for_extra)
 async def resume_extra(message: Message, state: FSMContext):
+    if is_answer_too_short(message.text):
+        await message.answer("Напишите пару фраз о ваших ожиданиях и важных деталях, которые стоит учесть.", reply_markup=process_keyboard())
+        return
     await state.update_data(extra=message.text)
     data = await state.get_data()
     user_text = (
@@ -328,6 +463,9 @@ async def begin_resume_check(cb: CallbackQuery, state: FSMContext):
 
 @dp.message(ResumeCheckState.waiting_for_resume)
 async def resume_check(message: Message, state: FSMContext):
+    if is_answer_too_short(message.text):
+        await message.answer("Пришлите полный текст резюме, чтобы разбор был точным.", reply_markup=process_keyboard())
+        return
     text = message.text
     result = await check_resume(text)
     await state.clear()
@@ -338,7 +476,7 @@ async def resume_check(message: Message, state: FSMContext):
 async def mock_start(cb: CallbackQuery):
     await cb.message.edit_text(
         "🎤 HR-мок интервью — 199₽\n\n"
-        "Вы присылаете пример диалога: вопросы HR и ваши ответы. Бот разбирает, где вы проседаете и как отвечать сильнее.",
+        "Тренировочное собеседование: вопросы как у реального HR, разбор каждого ответа и финальная оценка.",
         reply_markup=service_start_keyboard("MOCK_INTERVIEW_199", 199)
     )
 
@@ -346,18 +484,110 @@ async def mock_start(cb: CallbackQuery):
 @dp.callback_query(F.data == "start_MOCK_INTERVIEW_199")
 async def mock_begin(cb: CallbackQuery, state: FSMContext):
     await state.clear()
-    await state.set_state(MockInterviewState.waiting_for_dialog)
+    await state.set_state(MockInterviewState.waiting_for_position)
     await cb.message.edit_text(
-        "Скопируйте сюда пример диалога: вопросы HR и ваши ответы.",
+        "На какую должность вы готовитесь проходить собеседование? Можно скинуть краткий текст вакансии.",
         reply_markup=process_keyboard()
     )
 
 
-@dp.message(MockInterviewState.waiting_for_dialog)
-async def mock_process(message: Message, state: FSMContext):
-    result = await hr_mock_interview(message.text)
-    await state.clear()
-    await message.answer(result, reply_markup=main_keyboard())
+@dp.message(MockInterviewState.waiting_for_position)
+async def mock_position(message: Message, state: FSMContext):
+    if is_answer_too_short(message.text):
+        await message.answer("Опишите должность или сферу чуть подробнее, чтобы вопросы были точными.", reply_markup=process_keyboard())
+        return
+    await state.update_data(position=message.text)
+    await state.set_state(MockInterviewState.waiting_for_experience)
+    await message.answer(
+        "Опишите ваш реальный опыт под эту должность: работа, стажировки, проекты. Чем занимались и какие результаты были.",
+        reply_markup=process_keyboard()
+    )
+
+
+@dp.message(MockInterviewState.waiting_for_experience)
+async def mock_experience(message: Message, state: FSMContext):
+    if is_answer_too_short(message.text):
+        await message.answer("Нужно описать хотя бы пару примеров задач и результатов.", reply_markup=process_keyboard())
+        return
+    await state.update_data(experience=message.text)
+    await state.set_state(MockInterviewState.waiting_for_goals)
+    await message.answer(
+        "Какие у вас цели и страхи перед собеседованием? Чего хотите добиться и чего боитесь больше всего?",
+        reply_markup=process_keyboard()
+    )
+
+
+@dp.message(MockInterviewState.waiting_for_goals)
+async def mock_goals(message: Message, state: FSMContext):
+    if is_answer_too_short(message.text):
+        await message.answer("Напишите честно, чего хотите и чего боитесь от собеседования.", reply_markup=process_keyboard())
+        return
+    data = await state.get_data()
+    position = data.get("position")
+    experience = data.get("experience")
+    goals = message.text
+
+    await state.update_data(goals=goals, dialog="")
+
+    payload = (
+        "РЕЖИМ: start\n\n"
+        f"Целевая должность: {position}\n\n"
+        f"Опыт кандидата: {experience}\n\n"
+        f"Цели и страхи кандидата: {goals}\n\n"
+        "Сформируй короткое приветствие и первый вопрос для тренировочного интервью."
+    )
+
+    reply = await hr_mock_interview(payload)
+
+    await state.set_state(MockInterviewState.in_interview)
+    await state.update_data(step=1)
+    await message.answer(reply, reply_markup=process_keyboard())
+
+
+@dp.message(MockInterviewState.in_interview)
+async def mock_interview_step(message: Message, state: FSMContext):
+    if is_answer_too_short(message.text):
+        await message.answer("Попробуйте ответить так, как на реальном собеседовании: развёрнуто и по сути.", reply_markup=process_keyboard())
+        return
+
+    data = await state.get_data()
+    position = data.get("position")
+    experience = data.get("experience")
+    goals = data.get("goals")
+    step = data.get("step", 1)
+    dialog = data.get("dialog", "")
+
+    dialog += f"Ответ кандидата на шаге {step}:\n{message.text}\n\n"
+
+    if step < MAX_MOCK_STEPS:
+        payload = (
+            "РЕЖИМ: step\n\n"
+            f"Текущий шаг: {step}\n\n"
+            f"Целевая должность: {position}\n\n"
+            f"Опыт кандидата: {experience}\n\n"
+            f"Цели и страхи кандидата: {goals}\n\n"
+            f"История ответов кандидата:\n{dialog}\n\n"
+            "Оцени последний ответ кандидата, дай честный, но конструктивный разбор и задай следующий вопрос. "
+            "Формулировки вопросов можно менять, как живой HR."
+        )
+
+        reply = await hr_mock_interview(payload)
+        await state.update_data(step=step + 1, dialog=dialog)
+        await message.answer(reply, reply_markup=process_keyboard())
+    else:
+        payload = (
+            "РЕЖИМ: summary\n\n"
+            f"Целевая должность: {position}\n\n"
+            f"Опыт кандидата: {experience}\n\n"
+            f"Цели и страхи кандидата: {goals}\n\n"
+            f"История ответов кандидата:\n{dialog}\n\n"
+            "Сделай итоговое резюме собеседования: сильные стороны, слабые места, риски и конкретные рекомендации. "
+            "Пиши как опытный HR после реального интервью."
+        )
+
+        reply = await hr_mock_interview(payload)
+        await state.clear()
+        await message.answer(reply, reply_markup=main_keyboard())
 
 
 @dp.callback_query(F.data == "interview_plan")
@@ -381,6 +611,9 @@ async def plan_begin(cb: CallbackQuery, state: FSMContext):
 
 @dp.message(InterviewPlanState.waiting_for_info)
 async def plan_process(message: Message, state: FSMContext):
+    if is_answer_too_short(message.text):
+        await message.answer("Нужно больше деталей по должности, компании и вашим переживаниям.", reply_markup=process_keyboard())
+        return
     result = await interview_plan(message.text)
     await state.clear()
     await message.answer(result, reply_markup=main_keyboard())
@@ -407,6 +640,9 @@ async def soft_begin(cb: CallbackQuery, state: FSMContext):
 
 @dp.message(SoftSkillsState.waiting_for_answers)
 async def soft_process(message: Message, state: FSMContext):
+    if is_answer_too_short(message.text):
+        await message.answer("Важно описать реальные ситуации и ваше поведение в них.", reply_markup=process_keyboard())
+        return
     result = await soft_analysis(message.text)
     await state.clear()
     await message.answer(result, reply_markup=main_keyboard())
@@ -433,6 +669,9 @@ async def vacancy_begin(cb: CallbackQuery, state: FSMContext):
 
 @dp.message(VacancyMatchState.waiting_for_vacancy)
 async def vacancy_part1(message: Message, state: FSMContext):
+    if is_answer_too_short(message.text):
+        await message.answer("Пришлите полный текст вакансии.", reply_markup=process_keyboard())
+        return
     await state.update_data(vacancy=message.text)
     await state.set_state(VacancyMatchState.waiting_for_profile)
     await message.answer(
@@ -443,6 +682,9 @@ async def vacancy_part1(message: Message, state: FSMContext):
 
 @dp.message(VacancyMatchState.waiting_for_profile)
 async def vacancy_part2(message: Message, state: FSMContext):
+    if is_answer_too_short(message.text):
+        await message.answer("Опишите опыт и навыки подробнее, чтобы сравнение было точным.", reply_markup=process_keyboard())
+        return
     data = await state.get_data()
     joined = f"Вакансия:\n{data['vacancy']}\n\nПрофиль:\n{message.text}"
     await state.clear()
@@ -471,6 +713,9 @@ async def courses_begin(cb: CallbackQuery, state: FSMContext):
 
 @dp.message(CoursesState.waiting_for_info)
 async def courses_process(message: Message, state: FSMContext):
+    if is_answer_too_short(message.text):
+        await message.answer("Чуть подробнее про ваш уровень и цели.", reply_markup=process_keyboard())
+        return
     result = await course_recommendations(message.text)
     await state.clear()
     await message.answer(result, reply_markup=main_keyboard())
