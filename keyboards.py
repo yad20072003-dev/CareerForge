@@ -3,6 +3,15 @@ from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 def main_keyboard():
     kb = [
+        [InlineKeyboardButton(text="🔥 Меню услуг", callback_data="services_menu")],
+        [InlineKeyboardButton(text="ℹ️ Инфо / Услуги / Цены", callback_data="info")],
+        [InlineKeyboardButton(text="📜 Условия использования", callback_data="terms")],
+    ]
+    return InlineKeyboardMarkup(inline_keyboard=kb)
+
+
+def services_keyboard():
+    kb = [
         [InlineKeyboardButton(text="🧭 Профориентация — 149₽", callback_data="career")],
         [InlineKeyboardButton(text="📝 Создание резюме — 199₽", callback_data="resume_create")],
         [InlineKeyboardButton(text="🔍 Проверка резюме — 149₽", callback_data="resume_check")],
@@ -11,11 +20,9 @@ def main_keyboard():
         [InlineKeyboardButton(text="💬 Soft skills анализ — 129₽", callback_data="soft")],
         [InlineKeyboardButton(text="📄 Анализ вакансии — 129₽", callback_data="vacancy")],
         [InlineKeyboardButton(text="🎓 Подбор обучения — 129₽", callback_data="courses")],
-        [InlineKeyboardButton(text="ℹ️ Инфо / Услуги / Цены", callback_data="info")],
-        [InlineKeyboardButton(text="📜 Условия использования", callback_data="terms")],
+        [InlineKeyboardButton(text="⬅️ Назад в главное меню", callback_data="back_to_menu")],
     ]
     return InlineKeyboardMarkup(inline_keyboard=kb)
-
 
 
 def back_button():
@@ -26,13 +33,12 @@ def back_button():
     )
 
 
-
 def service_start_keyboard(service_code: str, price: int):
     return InlineKeyboardMarkup(
         inline_keyboard=[
             [InlineKeyboardButton(text="💳 Оплатить", callback_data=f"pay_{service_code}")],
-            [InlineKeyboardButton(text="🚀 Начать", callback_data=f"start_{service_code}")],
-            [InlineKeyboardButton(text="⬅️ Назад", callback_data="back_to_menu")],
+            [InlineKeyboardButton(text="🚀 Начать без оплаты", callback_data=f"start_{service_code}")],
+            [InlineKeyboardButton(text="⬅️ Назад к услугам", callback_data="services_menu")],
         ]
     )
 
