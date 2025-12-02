@@ -1,15 +1,31 @@
-from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import A4
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
+from reportlab.lib.styles import ParagraphStyle
+from reportlab.lib.units import mm
 
-def create_pdf(text: str, filepath: str):
-    c = canvas.Canvas(filepath, pagesize=A4)
-    width, height = A4
-    text_obj = c.beginText(40, height - 40)
-    text_obj.setFont("Helvetica", 10)
+async def build_pdf(text: str, filepath: str):
+    doc = SimpleDocTemplate(
+        filepath,
+        pagesize=A4,
+        rightMargin=20 * mm,
+        leftMargin=20 * mm,
+        topMargin=20 * mm,
+        bottomMargin=20 * mm
+    )
 
-    for line in text.split("\n"):
-        text_obj.textLine(line)
+    style = ParagraphStyle(
+        name="Main",
+        fontName="Helvetica",
+        fontSize=11,
+        leading=15
+    )
 
-    c.drawText(text_obj)
-    c.save()
+    story = []
+    paragraphs = text.split("\n")
+
+    for p in paragraphs:
+        story.append(Paragraph(p, style))
+        story.append(Spacer(1, 6 * mm))
+
+    doc.build(story)
     return filepath
