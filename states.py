@@ -2,11 +2,22 @@ from aiogram.fsm.state import StatesGroup, State
 
 
 class CareerState(StatesGroup):
-    waiting_for_input = State()
+    waiting_for_basic = State()
+    waiting_for_education = State()
+    waiting_for_experience = State()
+    waiting_for_interests = State()
+    waiting_for_preferences = State()
+    waiting_for_goals = State()
 
 
 class ResumeCreateState(StatesGroup):
-    waiting_for_input = State()
+    waiting_for_position = State()
+    waiting_for_contacts = State()
+    waiting_for_experience = State()
+    waiting_for_education = State()
+    waiting_for_skills = State()
+    waiting_for_projects = State()
+    waiting_for_extra = State()
 
 
 class ResumeCheckState(StatesGroup):
