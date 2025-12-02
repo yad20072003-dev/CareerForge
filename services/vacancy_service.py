@@ -1,5 +1,15 @@
 from services.ai import ai_answer
-from prompts.vacancy import PROMPT_VACANCY
 
-async def vacancy_match(vacancy_and_profile: str):
-    return await ai_answer(PROMPT_VACANCY, vacancy_and_profile)
+
+async def vacancy_match(text: str) -> str:
+    prompt = (
+        "Оцени соответствие профиля пользователя вакансии. "
+        "Структура:\n"
+        "1. Что подходит\n"
+        "2. Что не подходит\n"
+        "3. Что критично поправить\n"
+        "4. Чего не хватает\n"
+        "5. Итоговая рекомендация\n\n"
+        f"{text}"
+    )
+    return await ai_answer(prompt)
