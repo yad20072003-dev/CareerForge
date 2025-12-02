@@ -1,7 +1,7 @@
 import os
 from openai import OpenAI
 
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+client = OpenAI() 
 
 MODEL = "gpt-5.1-mini"
 MAX_CHARS = 12000
@@ -28,12 +28,16 @@ async def ai_answer(system_prompt: str, user_prompt: str) -> str:
             model=MODEL,
             messages=[
                 {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_prompt},
+                {"role": "user", "content": user_prompt}
             ],
             temperature=0.45,
-            max_tokens=2048,
+            max_tokens=2000,
         )
+        reply = completion.choices[0].message.content
+        return clean_text(reply)
 
-        return clean_text(completion.choices[0].message["content"])
     except Exception:
-        return "⚠ Ошибка. Попробуйте позже."
+        return (
+            "⚠ Произошла ошибка при обращении к ИИ.\n"
+            "Попробуйте ещё раз спустя минуту."
+        )
