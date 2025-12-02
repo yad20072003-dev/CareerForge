@@ -1,21 +1,7 @@
 from services.ai import ai_answer
+from prompts.resume import build_resume_prompt
 
-
-async def make_resume(text: str) -> str:
-    prompt = (
-        "Сформируй профессиональное резюме под указанную должность. "
-        "Структура резюме:\n"
-        "— Заголовок и должность\n"
-        "— Короткое summary (2–3 предложения)\n"
-        "— Опыт работы (структурировано, по пунктам)\n"
-        "— Образование\n"
-        "— Навыки (hard / soft)\n"
-        "— Проекты и достижения\n"
-        "— Дополнительно\n\n"
-        "Требования:\n"
-        "• избегай воды,\n"
-        "• делай формулировки HR-стиля,\n"
-        "• выделяй результаты цифрами, где это возможно.\n\n"
-        f"Вот данные пользователя:\n{text}\n"
-    )
-    return await ai_answer(prompt)
+async def make_resume(user_text: str) -> str:
+    system_prompt = build_resume_prompt(user_text)
+    result = await ai_answer(system_prompt, "")
+    return result
