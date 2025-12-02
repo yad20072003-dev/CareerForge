@@ -1,10 +1,7 @@
 from services.ai import ai_answer
-
+from prompts.soft import build_soft_prompt
 
 async def soft_analysis(text: str) -> str:
-    prompt = (
-        "Сделай анализ soft skills пользователя. "
-        "Определи сильные стороны, слабые стороны, поведенческие паттерны и рекомендации.\n\n"
-        f"Ситуации пользователя:\n{text}"
-    )
-    return await ai_answer(prompt)
+    prompt = build_soft_prompt(text)
+    result = await ai_answer(prompt, "")
+    return result
