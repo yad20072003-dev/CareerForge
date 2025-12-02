@@ -46,6 +46,6 @@ def service_start_keyboard(service_code: str, price: int):
 def process_keyboard():
     return InlineKeyboardMarkup(
         inline_keyboard=[
-            [InlineKeyboardButton(text="⬅️ Отмена", callback_data="back_to_menu")]
+            [InlineKeyboardButton(text="⬅️ Назад", callback_data="back_step")]
         ]
     )
