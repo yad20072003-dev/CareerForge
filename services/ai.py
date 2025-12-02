@@ -1,33 +1,47 @@
 import os
 from openai import OpenAI
+from openai.types.chat import ChatCompletionMessageParam
 
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 MODEL = "gpt-5.1-mini"
+MAX_CHARS = 12000
 
 
-async def ai_answer(prompt: str) -> str:
-    completion = client.chat.completions.create(
-        model=MODEL,
-        messages=[
-            {
-                "role": "system",
-                "content": (
-                    "Ты — уверенный, вежливый и профессиональный HR-эксперт, карьерный консультант "
-                    "и специалист по резюме мирового уровня. "
-                    "Отвечай структурировано, детально и по делу. "
-                    "Если в сообщении пользователя хаос, мало данных, ошибки — мягко, но честно укажи на это "
-                    "и попроси уточнить. "
-                    "Всегда адаптируй стиль под ситуацию: дружелюбный тон для новичков, строгий — если нужно. "
-                    "Если просят анализ — анализируй. "
-                    "Если просят резюме — формируй полноценный текст. "
-                    "Если просят HR-интервью — задавай вопросы как реальный HR, "
-                    "включая уточняющие, стрессовые и кейсовые."
-                )
-            },
-            {"role": "user", "content": prompt}
-        ],
-        max_tokens=4096,
-        temperature=0.8,
-    )
-    return completion.choices[0].message["content"]
+def clean_text(text: str) -> str:
+    if not text:
+        return ""
+    return text.strip()
+
+
+def safe_truncate(text: str, max_len: int = MAX_CHARS) -> str:
+    if text and len(text) > max_len:
+        return text[:max_len]
+    return text
+
+
+async def ai_answer(system_prompt: str, user_prompt: str) -> str:
+    system_prompt = safe_truncate(system_prompt)
+    user_prompt = safe_truncate(user_prompt)
+
+    messages: list[ChatCompletionMessageParam] = [
+        {"role": "system", "content": system_prompt},
+        {"role": "user", "content": user_prompt}
+    ]
+
+    try:
+        completion = client.chat.completions.create(
+            model=MODEL,
+            messages=messages,
+            temperature=0.45,
+            max_tokens=2048,
+        )
+
+        answer = completion.choices[0].message.content
+        return clean_text(answer)
+
+    except Exception as e:
+        return (
+            "⚠ Произошла ошибка при обращении к ИИ.\n"
+            "Попробуйте ещё раз через минуту."
+        )
