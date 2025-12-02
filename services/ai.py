@@ -2,7 +2,7 @@ import os
 from openai import OpenAI
 from openai.types.chat import ChatCompletionMessageParam
 
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+client = OpenAI()
 
 MODEL = "gpt-5.1-mini"
 MAX_CHARS = 12000
@@ -15,7 +15,9 @@ def clean_text(text: str) -> str:
 
 
 def safe_truncate(text: str, max_len: int = MAX_CHARS) -> str:
-    if text and len(text) > max_len:
+    if not text:
+        return ""
+    if len(text) > max_len:
         return text[:max_len]
     return text
 
@@ -34,14 +36,9 @@ async def ai_answer(system_prompt: str, user_prompt: str) -> str:
             model=MODEL,
             messages=messages,
             temperature=0.45,
-            max_tokens=2048,
+            max_tokens=2300
         )
-
-        answer = completion.choices[0].message.content
-        return clean_text(answer)
+        return clean_text(completion.choices[0].message.content)
 
     except Exception:
-        return (
-            "⚠ Произошла ошибка при обращении к ИИ.\n"
-            "Попробуйте ещё раз через минуту."
-        )
+        return "⚠ Произошёл технический сбой. Попробуйте ещё раз через минуту."
