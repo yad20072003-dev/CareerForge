@@ -1,24 +1,22 @@
 import os
+import asyncio
 from openai import OpenAI
-import httpx
 
-transport = httpx.HTTPTransport(proxy=None)
-http_client = httpx.Client(transport=transport)
-
-client = OpenAI(
-    api_key=os.getenv("OPENAI_API_KEY"),
-    http_client=http_client
-)
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 
-async def ai_answer(system_prompt: str, user_text: str):
-    response = client.chat.completions.create(
-        model="gpt-5.1-mini",
-        messages=[
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_text}
-        ],
-        temperature=0.25,
-        max_tokens=5000
-    )
-    return response.choices[0].message.content
+async def ai_answer(system_prompt: str, user_prompt: str, max_tokens: int = 1200) -> str:
+    def _call():
+        model = os.getenv("OPENAI_MODEL", "gpt-5.1-mini")
+        resp = client.chat.completions.create(
+            model=model,
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt},
+            ],
+            temperature=0.4,
+            max_tokens=max_tokens,
+        )
+        return resp.choices[0].message.content.strip()
+
+    return await asyncio.to_thread(_call)
