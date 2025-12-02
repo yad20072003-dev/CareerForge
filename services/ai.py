@@ -1,8 +1,8 @@
 import os
-from openai import OpenAI
+from openai import AsyncOpenAI
 from openai.types.chat import ChatCompletionMessageParam
 
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+client = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 MODEL = "gpt-5.1-mini"
 MAX_CHARS = 12000
@@ -30,12 +30,13 @@ async def ai_answer(system_prompt: str, user_prompt: str) -> str:
     ]
 
     try:
-        completion = client.chat.completions.create(
+        completion = await client.chat.completions.create(
             model=MODEL,
             messages=messages,
             temperature=0.45,
-            max_tokens=2000,
+            max_tokens=2048,
         )
         return clean_text(completion.choices[0].message.content)
+
     except Exception:
-        return "⚠ Произошла ошибка. Попробуйте ещё раз."
+        return "⚠ Ошибка обращения к ИИ. Попробуйте позже."
