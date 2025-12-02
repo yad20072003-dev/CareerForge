@@ -1,16 +1,7 @@
 from services.ai import ai_answer
+from prompts.career import build_career_prompt
 
-
-async def make_career_report(text: str) -> str:
-    prompt = (
-        "Проведи глубокий карьерный разбор. "
-        "На основе данных о человеке определи:\n"
-        "1) сильные стороны,\n"
-        "2) риски и ограничения,\n"
-        "3) предпочтительную рабочую среду,\n"
-        "4) тип мышления,\n"
-        "5) конкретные направления, в которых человек сможет развиваться.\n\n"
-        f"Вот данные пользователя:\n{text}\n\n"
-        "Дай вывод строго структурированно и максимально практично."
-    )
-    return await ai_answer(prompt)
+async def make_career_report(user_text: str) -> str:
+    system_prompt = build_career_prompt(user_text)
+    result = await ai_answer(system_prompt, "")
+    return result
