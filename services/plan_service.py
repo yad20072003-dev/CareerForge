@@ -1,14 +1,7 @@
 from services.ai import ai_answer
+from prompts.plan import build_plan_prompt
 
-
-async def interview_plan(text: str) -> str:
-    prompt = (
-        "Составь индивидуальный план поведения на собеседовании. Включи:\n"
-        "— что подчеркнуть,\n"
-        "— что скрыть,\n"
-        "— вопросы, к которым подготовиться,\n"
-        "— ошибки, которых избегать,\n"
-        "— рекомендации по стилю общения.\n\n"
-        f"Данные пользователя:\n{text}"
-    )
-    return await ai_answer(prompt)
+async def interview_plan(user_text: str) -> str:
+    prompt = build_plan_prompt(user_text)
+    result = await ai_answer(prompt, "")
+    return result
