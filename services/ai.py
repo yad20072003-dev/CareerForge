@@ -40,7 +40,7 @@ async def ai_answer(system_prompt: str, user_prompt: str) -> str:
         answer = completion.choices[0].message.content
         return clean_text(answer)
 
-    except Exception as e:
+    except Exception:
         return (
             "⚠ Произошла ошибка при обращении к ИИ.\n"
             "Попробуйте ещё раз через минуту."
