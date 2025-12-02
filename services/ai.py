@@ -1,8 +1,10 @@
 import os
 from openai import OpenAI
-from httpx import Client
+import httpx
 
-http_client = Client(proxies=None)
+transport = httpx.HTTPTransport(proxy=None)
+
+http_client = httpx.Client(transport=transport)
 
 client = OpenAI(
     api_key=os.getenv("OPENAI_API_KEY"),
@@ -10,8 +12,8 @@ client = OpenAI(
 )
 
 async def ai_answer(prompt: str, model: str = "gpt-5.1-mini"):
-    answer = client.chat.completions.create(
+    response = client.chat.completions.create(
         model=model,
-        messages=[{"role": "user", "content": prompt}],
+        messages=[{"role": "user", "content": prompt}]
     )
-    return answer.choices[0].message["content"]
+    return response.choices[0].message["content"]
