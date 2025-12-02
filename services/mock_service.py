@@ -1,5 +1,13 @@
 from services.ai import ai_answer
-from prompts.mock import PROMPT_MOCK
 
-async def hr_mock_interview(conversation: str):
-    return await ai_answer(PROMPT_MOCK, conversation)
+
+async def hr_mock_interview(text: str) -> str:
+    prompt = (
+        "Ты — HR-интервьюер. "
+        "Если режим start — дай приветствие и первый вопрос.\n"
+        "Если режим step — оцени ответ кандидата, дай честный разбор и задай следующий вопрос. "
+        "Можно менять формулировки, задавать неудобные и кейсовые вопросы, уточнять прошлые ответы.\n"
+        "Если режим summary — сделай итог: сильные стороны, слабые стороны, риски, рекомендации.\n\n"
+        f"{text}"
+    )
+    return await ai_answer(prompt)
