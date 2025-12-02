@@ -25,11 +25,10 @@ class ResumeCheckState(StatesGroup):
 
 
 class MockInterviewState(StatesGroup):
-    waiting_for_position = State()      # ← НОВОЕ (у тебя его не было)
-    waiting_for_experience = State()    # ← НОВОЕ
-    waiting_for_goals = State()         # ← НОВОЕ
-    in_interview = State()              # ← НОВОЕ
-    waiting_for_dialog = State()        # ← НЕ ИСПОЛЬЗУЕМ, но оставил чтобы не ломать старый код
+    waiting_for_position = State()
+    waiting_for_experience = State()
+    waiting_for_goals = State()
+    in_interview = State()
 
 
 class InterviewPlanState(StatesGroup):
