@@ -1,7 +1,9 @@
 from services.ai import ai_answer
-from prompts.vacancy import build_vacancy_prompt
+from prompts.vacancy import VACANCY_MATCH_PROMPT
 
-async def vacancy_match(text: str) -> str:
-    prompt = build_vacancy_prompt(text)
-    result = await ai_answer(prompt, "")
-    return result
+
+async def vacancy_match(user_text: str) -> str:
+    return await ai_answer(
+        system_prompt=VACANCY_MATCH_PROMPT,
+        user_prompt=user_text
+    )
