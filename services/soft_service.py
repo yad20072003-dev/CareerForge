@@ -1,7 +1,9 @@
 from services.ai import ai_answer
-from prompts.soft import build_soft_prompt
+from prompts.soft import SOFT_ANALYSIS_PROMPT
 
-async def soft_analysis(text: str) -> str:
-    prompt = build_soft_prompt(text)
-    result = await ai_answer(prompt, "")
-    return result
+
+async def soft_analysis(user_text: str) -> str:
+    return await ai_answer(
+        system_prompt=SOFT_ANALYSIS_PROMPT,
+        user_prompt=user_text
+    )
