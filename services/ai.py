@@ -1,7 +1,7 @@
 import os
-from openai import OpenAI
+from openai import AsyncOpenAI
 
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+client = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 MODEL = "gpt-5.1-mini"
 MAX_CHARS = 12000
@@ -24,7 +24,7 @@ async def ai_answer(system_prompt: str, user_prompt: str) -> str:
     user_prompt = safe_truncate(user_prompt)
 
     try:
-        completion = client.chat.completions.create(
+        completion = await client.chat.completions.create(
             model=MODEL,
             messages=[
                 {"role": "system", "content": system_prompt},
@@ -34,7 +34,7 @@ async def ai_answer(system_prompt: str, user_prompt: str) -> str:
             max_tokens=2048
         )
 
-        answer = completion.choices[0].message["content"]
+        answer = completion.choices[0].message.content
         return clean_text(answer)
 
     except Exception as e:
