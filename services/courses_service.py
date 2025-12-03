@@ -1,7 +1,9 @@
 from services.ai import ai_answer
-from prompts.courses import build_courses_prompt
+from prompts.courses import COURSE_RECOMMEND_PROMPT
+
 
 async def course_recommendations(user_text: str) -> str:
-    prompt = build_courses_prompt(user_text)
-    result = await ai_answer(prompt, "")
-    return result
+    return await ai_answer(
+        system_prompt=COURSE_RECOMMEND_PROMPT,
+        user_prompt=user_text
+    )
