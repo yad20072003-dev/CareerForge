@@ -26,39 +26,21 @@ def process_keyboard():
 
 def services_keyboard():
     return InlineKeyboardMarkup(inline_keyboard=[
-        [
-            InlineKeyboardButton(text="🧭 Профориентация — 149₽", callback_data="career")
-        ],
-        [
-            InlineKeyboardButton(text="✏️ Создание резюме — 199₽", callback_data="resume_create")
-        ],
-        [
-            InlineKeyboardButton(text="🔍 Проверка резюме — 149₽", callback_data="resume_check")
-        ],
-        [
-            InlineKeyboardButton(text="🎤 HR-мок интервью — 199₽", callback_data="mock")
-        ],
-        [
-            InlineKeyboardButton(text="📘 План на собеседование — 149₽", callback_data="interview_plan")
-        ],
-        [
-            InlineKeyboardButton(text="💬 Soft-skills анализ — 99₽", callback_data="soft")
-        ],
-        [
-            InlineKeyboardButton(text="📄 Анализ вакансии — 99₽", callback_data="vacancy")
-        ],
-        [
-            InlineKeyboardButton(text="🎓 Подбор обучения — 99₽", callback_data="courses")
-        ],
-        [
-            InlineKeyboardButton(text="⬅️ Назад", callback_data="back_to_menu")
-        ]
+        [InlineKeyboardButton(text="🧭 Профориентация — 149₽", callback_data="career")],
+        [InlineKeyboardButton(text="✏️ Создание резюме — 199₽", callback_data="resume_create")],
+        [InlineKeyboardButton(text="🔍 Проверка резюме — 149₽", callback_data="resume_check")],
+        [InlineKeyboardButton(text="🎤 HR-мок интервью — 199₽", callback_data="mock")],
+        [InlineKeyboardButton(text="📘 План на собеседование — 149₽", callback_data="interview_plan")],
+        [InlineKeyboardButton(text="💬 Soft-skills анализ — 99₽", callback_data="soft")],
+        [InlineKeyboardButton(text="📄 Анализ вакансии — 99₽", callback_data="vacancy")],
+        [InlineKeyboardButton(text="🎓 Подбор обучения — 99₽", callback_data="courses")],
+        [InlineKeyboardButton(text="⬅️ Назад", callback_data="back_to_menu")]
     ])
 
 
 def service_start_keyboard(code: str, price: int):
     return InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text=f"🚀 Начать", callback_data=f"start_{code}")],
+        [InlineKeyboardButton(text="🚀 Начать", callback_data=f"start_{code}")],
         [InlineKeyboardButton(text=f"💳 Оплатить {price}₽", callback_data=f"pay_{code}")],
         [InlineKeyboardButton(text="⬅️ Назад", callback_data="services_menu")]
     ])
@@ -101,5 +83,19 @@ def free_keyboard():
         [InlineKeyboardButton(text="⚡ Мини-советы по резюме", callback_data="free_mini_resume")],
         [InlineKeyboardButton(text="📌 Чек-лист к собесу", callback_data="free_checklist")],
         [InlineKeyboardButton(text="🔎 Советы по поиску", callback_data="free_tips")],
+        [InlineKeyboardButton(text="⬅️ Назад", callback_data="back_to_menu")]
+    ])
+
+
+def services_menu_keyboard():
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="🧭 Профориентация — 149₽", callback_data="career")],
+        [InlineKeyboardButton(text="✏️ Создание резюме — 199₽", callback_data="resume_create")],
+        [InlineKeyboardButton(text="🔍 Проверка резюме — 149₽", callback_data="resume_check")],
+        [InlineKeyboardButton(text="🎤 HR-мок интервью — 199₽", callback_data="mock")],
+        [InlineKeyboardButton(text="📘 План на собеседование — 149₽", callback_data="interview_plan")],
+        [InlineKeyboardButton(text="💬 Soft-skills анализ — 99₽", callback_data="soft")],
+        [InlineKeyboardButton(text="📄 Анализ вакансии — 99₽", callback_data="vacancy")],
+        [InlineKeyboardButton(text="🎓 Подбор обучения — 99₽", callback_data="courses")],
         [InlineKeyboardButton(text="⬅️ Назад", callback_data="back_to_menu")]
     ])
