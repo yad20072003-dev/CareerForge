@@ -3,7 +3,7 @@ from openai import OpenAI
 
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-MODEL = "gpt-5.1"
+MODEL = "gpt-5.1-chat-latest"
 MAX_CHARS = 12000
 
 
