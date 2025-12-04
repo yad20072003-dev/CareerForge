@@ -37,7 +37,7 @@ from services.vacancy_service import vacancy_match
 from services.courses_service import course_recommendations
 
 BOT_TOKEN = os.getenv("BOT_TOKEN")
-MAX_MOCK_STEPS = 30
+MAX_MOCK_STEPS = 18
 
 bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher()
@@ -558,7 +558,7 @@ async def resume_check(message: Message, state: FSMContext):
 async def mock_start(cb: CallbackQuery):
     await cb.message.edit_text(
         "🎤 HR-мок интервью — 199₽\n\n"
-        "Тренировочное собеседование: живые вопросы как у реального HR, разбор ответов и финальная оценка.",
+        "Тренировочное собеседование: вопросы как у реального HR, разбор каждого ответа и финальная оценка.",
         reply_markup=service_start_keyboard("MOCK_INTERVIEW_199", 199)
     )
 
@@ -616,14 +616,12 @@ async def mock_goals(message: Message, state: FSMContext):
         f"Целевая должность: {position}\n\n"
         f"Опыт кандидата: {experience}\n\n"
         f"Цели и страхи кандидата: {goals}\n\n"
-        "Сформируй короткое приветствие и первый вопрос для тренировочного интервью. "
-        "Веди себя как живой HR: вопросы могут быть прямыми, сложными и неудобными."
+        "Сформируй короткое приветствие и первый вопрос для тренировочного интервью."
     )
 
     reply = await hr_mock_interview(payload)
 
     await state.set_state(MockInterviewState.in_interview)
-    await state.update_data(last_question=reply)
     await message.answer(reply, reply_markup=process_keyboard())
 
 
@@ -642,7 +640,22 @@ async def mock_interview_step(message: Message, state: FSMContext):
 
     dialog += f"Ответ кандидата на шаге {step}:\n{message.text}\n\n"
 
-    if step >= MAX_MOCK_STEPS:
+    if step < MAX_MOCK_STEPS:
+        payload = (
+            "РЕЖИМ: step\n\n"
+            f"Текущий шаг: {step}\n\n"
+            f"Целевая должность: {position}\n\n"
+            f"Опыт кандидата: {experience}\n\n"
+            f"Цели и страхи кандидата: {goals}\n\n"
+            f"История ответов кандидата:\n{dialog}\n\n"
+            "Оцени последний ответ кандидата, дай честный, но конструктивный разбор и задай следующий вопрос. "
+            "Формулировки вопросов можно менять, как живой HR."
+        )
+
+        reply = await hr_mock_interview(payload)
+        await state.update_data(step=step + 1, dialog=dialog)
+        await message.answer(reply, reply_markup=process_keyboard())
+    else:
         payload = (
             "РЕЖИМ: summary\n\n"
             f"Целевая должность: {position}\n\n"
@@ -652,33 +665,10 @@ async def mock_interview_step(message: Message, state: FSMContext):
             "Сделай итоговое резюме собеседования: сильные стороны, слабые места, риски и конкретные рекомендации. "
             "Пиши как опытный HR после реального интервью."
         )
+
         reply = await hr_mock_interview(payload)
         await state.clear()
         await message.answer(reply, reply_markup=main_keyboard())
-        return
-
-    payload = (
-        "РЕЖИМ: step\n\n"
-        f"Текущий шаг: {step}\n\n"
-        f"Целевая должность: {position}\n\n"
-        f"Опыт кандидата: {experience}\n\n"
-        f"Цели и страхи кандидата: {goals}\n\n"
-        f"История ответов кандидата:\n{dialog}\n\n"
-        "Оцени последний ответ кандидата, дай честный, но конструктивный разбор и задай следующий вопрос. "
-        "Формулировки вопросов меняй, не повторяйся, веди себя как живой HR. "
-        "Если информации уже достаточно для выводов, вместо следующего вопроса сделай итоговое резюме собеседования "
-        "и в самом конце ответа отдельной строкой напиши маркер: ИНТЕРВЬЮ_ЗАВЕРШЕНО."
-    )
-
-    reply = await hr_mock_interview(payload)
-
-    if "ИНТЕРВЬЮ_ЗАВЕРШЕНО" in reply:
-        cleaned = reply.replace("ИНТЕРВЬЮ_ЗАВЕРШЕНО", "").strip()
-        await state.clear()
-        await message.answer(cleaned, reply_markup=main_keyboard())
-    else:
-        await state.update_data(step=step + 1, dialog=dialog, last_question=reply)
-        await message.answer(reply, reply_markup=process_keyboard())
 
 
 @dp.callback_query(F.data == "interview_plan")
