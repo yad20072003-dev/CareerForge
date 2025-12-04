@@ -3,7 +3,12 @@ from openai import OpenAI
 
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-MODEL = "gpt-5.1-chat-latest"
+PRIMARY_MODEL = "gpt-5.1-chat-latest"
+FALLBACK_MODELS = [
+    "gpt-4.1",
+    "gpt-4.1-mini"
+]
+
 MAX_CHARS = 12000
 
 
@@ -23,23 +28,27 @@ async def ai_answer(system_prompt: str, user_prompt: str) -> str:
     system_prompt = safe_truncate(system_prompt)
     user_prompt = safe_truncate(user_prompt)
 
-    try:
-        completion = client.chat.completions.create(
-            model=MODEL,
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_prompt}
-            ],
-            temperature=0.45,
-            max_completion_tokens=2048
-        )
+    models_to_try = [PRIMARY_MODEL] + FALLBACK_MODELS
 
-        answer = completion.choices[0].message["content"]
-        return clean_text(answer)
+    for model in models_to_try:
+        try:
+            completion = client.chat.completions.create(
+                model=model,
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt}
+                ],
+                temperature=0.45,
+                max_completion_tokens=2048
+            )
+            answer = completion.choices[0].message["content"]
+            return clean_text(answer)
 
-    except Exception as e:
-        print("AI ERROR:", e)
-        return (
-            "⚠ Произошла ошибка при обращении к ИИ.\n"
-            "Попробуйте ещё раз спустя минуту."
-        )
+        except Exception as e:
+            print(f"AI MODEL FAILED ({model}):", e)
+            continue
+
+    return (
+        "⚠ Не удалось получить ответ от ИИ.\n"
+        "Попробуйте позже — возможно, модели временно недоступны."
+    )
