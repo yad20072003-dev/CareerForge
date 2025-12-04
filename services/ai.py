@@ -3,7 +3,7 @@ from openai import OpenAI
 
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-MODEL = "gpt-5.1-mini"
+MODEL = "gpt-5.1"
 MAX_CHARS = 12000
 
 
@@ -30,7 +30,7 @@ async def ai_answer(system_prompt: str, user_prompt: str) -> str:
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_prompt}
             ],
-            temperature=0.5,
+            temperature=0.45,
             max_tokens=2048
         )
 
@@ -40,6 +40,6 @@ async def ai_answer(system_prompt: str, user_prompt: str) -> str:
     except Exception as e:
         print("AI ERROR:", e)
         return (
-            "⚠ Ошибка при обращении к ИИ.\n"
-            "Попробуйте ещё раз через минуту."
+            "⚠ Произошла ошибка при обращении к ИИ.\n"
+            "Попробуйте ещё раз спустя минуту."
         )
