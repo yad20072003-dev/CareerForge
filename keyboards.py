@@ -30,7 +30,7 @@ def services_keyboard():
         [InlineKeyboardButton(text="✏️ Создание резюме — 199₽", callback_data="resume_create")],
         [InlineKeyboardButton(text="🔍 Проверка резюме — 149₽", callback_data="resume_check")],
         [InlineKeyboardButton(text="🎤 HR-мок интервью — 199₽", callback_data="mock")],
-        [InlineKeyboardButton(text="📘 План поведения — 149₽", callback_data="interview_plan")],
+        [InlineKeyboardButton(text="📘 План на собеседование — 149₽", callback_data="interview_plan")],
         [InlineKeyboardButton(text="💬 Soft-skills анализ — 99₽", callback_data="soft")],
         [InlineKeyboardButton(text="📄 Анализ вакансии — 99₽", callback_data="vacancy")],
         [InlineKeyboardButton(text="🎓 Подбор обучения — 99₽", callback_data="courses")],
@@ -41,7 +41,6 @@ def services_keyboard():
 def service_start_keyboard(code: str, price: int):
     return InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text="🚀 Начать", callback_data=f"start_{code}")],
-        [InlineKeyboardButton(text=f"💳 Оплатить {price}₽", callback_data=f"pay_{code}")],
         [InlineKeyboardButton(text="⬅️ Назад", callback_data="services_menu")]
     ])
 
