@@ -31,10 +31,10 @@ async def ai_answer(system_prompt: str, user_prompt: str) -> str:
                 {"role": "user", "content": user_prompt}
             ],
             temperature=0.45,
-            max_completion_tokens=2048
+            max_tokens=2048
         )
 
-        answer = completion.choices[0].message.content or ""
+        answer = completion.choices[0].message.content
         return clean_text(answer)
 
     except Exception as e:
