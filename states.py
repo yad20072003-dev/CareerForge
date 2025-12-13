@@ -31,12 +31,12 @@ class MockInterviewState(StatesGroup):
     in_interview = State()
 
 
+class MockClarifyState(StatesGroup):
+    waiting_for_clarify = State()
+
+
 class InterviewPlanState(StatesGroup):
     waiting_for_info = State()
-
-
-class SoftSkillsState(StatesGroup):
-    waiting_for_answers = State()
 
 
 class VacancyMatchState(StatesGroup):
@@ -44,5 +44,10 @@ class VacancyMatchState(StatesGroup):
     waiting_for_profile = State()
 
 
-class CoursesState(StatesGroup):
-    waiting_for_info = State()
+class CompetitivenessState(StatesGroup):
+    q1 = State()
+    q2 = State()
+    q3 = State()
+    q4 = State()
+    q5 = State()
+    q6 = State()
