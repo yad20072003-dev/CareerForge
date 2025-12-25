@@ -1,35 +1,36 @@
-import sqlite3, json, os
+import sqlite3
+import json
+import os
 from datetime import datetime
 
-DB = "data/db.sqlite"
+DB_PATH = "data/db.sqlite"
 
-def conn():
+def init_db():
     os.makedirs("data", exist_ok=True)
-    return sqlite3.connect(DB)
-
-def init():
-    with conn() as c:
-        c.execute("""CREATE TABLE IF NOT EXISTS results(
-            id INTEGER PRIMARY KEY,
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.execute("""
+        CREATE TABLE IF NOT EXISTS results (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
             user_id INTEGER,
             service TEXT,
             data TEXT,
-            created TEXT
-        )""")
-        c.commit()
+            created_at TEXT
+        )
+        """)
+        conn.commit()
 
-def save(user_id, service, data):
-    with conn() as c:
-        c.execute(
-            "INSERT INTO results VALUES(NULL,?,?,?,?)",
+def save_result(user_id: int, service: str, data: dict):
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.execute(
+            "INSERT INTO results (user_id, service, data, created_at) VALUES (?, ?, ?, ?)",
             (user_id, service, json.dumps(data, ensure_ascii=False), datetime.utcnow().isoformat())
         )
-        c.commit()
+        conn.commit()
 
-def last(user_id, service):
-    with conn() as c:
-        r = c.execute(
-            "SELECT data FROM results WHERE user_id=? AND service=? ORDER BY id DESC LIMIT 1",
+def get_last_result(user_id: int, service: str):
+    with sqlite3.connect(DB_PATH) as conn:
+        row = conn.execute(
+            "SELECT data FROM results WHERE user_id = ? AND service = ? ORDER BY id DESC LIMIT 1",
             (user_id, service)
         ).fetchone()
-        return json.loads(r[0]) if r else None
+        return json.loads(row[0]) if row else None
