@@ -5,7 +5,7 @@ from aiogram.dispatcher import FSMContext
 from dotenv import load_dotenv
 
 from states import DialogStates
-from keyboards import services_keyboard, result_keyboard, about_keyboard, admin_keyboard, mock_mode_keyboard
+from keyboards import services_keyboard, result_keyboard, mock_mode_keyboard
 from products.products import PRODUCTS
 from storage.db import (
     init_db,
